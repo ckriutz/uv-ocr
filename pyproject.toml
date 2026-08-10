@@ -1,0 +1,22 @@
+[project]
+name = "uv-ocr"
+version = "0.1.0"
+description = "Mistral OCR 4.0 demo using Microsoft Foundry"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "azure-identity>=1.25.0",
+    "python-dotenv>=1.1.0",
+    "requests>=2.32.0",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.29.0",
+    "jupyter>=1.1.0",
+    "nbclient>=0.10.0",
+]
+
+[[tool.uv.index]]
+name = "microsoft-package-proxy"
+url = "https://packagefeedproxy.microsoft.io/pypi/simple"
+default = true

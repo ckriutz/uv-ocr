@@ -1,0 +1,9 @@
+.venv/
+.env
+.ipynb_checkpoints/
+__pycache__/
+*.py[cod]
+
+# Demo documents may contain customer data.
+documents/*
+!documents/.gitkeep
