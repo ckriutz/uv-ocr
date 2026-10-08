@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mistral OCR through Microsoft Foundry AI Gateway</title>
+  <script>
+    (() => {
+      const param = new URLSearchParams(window.location.search).get("scoutTheme");
+      const theme =
+        param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --cp-bg: #f7f4ef;
+      --cp-bg-elevated: #fcfbf8;
+      --cp-surface: #ffffff;
+      --cp-surface-soft: #f5f5f5;
+      --cp-border: #dedede;
+      --cp-border-strong: #919191;
+      --cp-text: #242424;
+      --cp-text-muted: #5c5c5c;
+      --cp-text-soft: #6f6f6f;
+      --cp-accent: #b11f4b;
+      --cp-accent-hover: #9a1a41;
+      --cp-accent-soft: rgba(177, 31, 75, 0.08);
+      --cp-accent-fg: #ffffff;
+      --cp-success: #16a34a;
+      --cp-danger: #dc2626;
+      --cp-warning: #f59e0b;
+      --cp-link: #0078d4;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+      --cp-overlay: rgba(255, 255, 255, 0.8);
+      --cp-panel: rgba(255, 255, 255, 0.86);
+      --cp-panel-strong: rgba(255, 255, 255, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.55);
+      --cp-highlight: rgba(177, 31, 75, 0.12);
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --cp-bg: #3d3b3a;
+      --cp-bg-elevated: #343231;
+      --cp-surface: #292929;
+      --cp-surface-soft: #2e2e2e;
+      --cp-border: #474747;
+      --cp-border-strong: #5f5f5f;
+      --cp-text: #dedede;
+      --cp-text-muted: #919191;
+      --cp-text-soft: #b0b0b0;
+      --cp-accent: #fd8ea1;
+      --cp-accent-hover: #fb7b91;
+      --cp-accent-soft: rgba(253, 142, 161, 0.14);
+      --cp-accent-fg: #1a1a1a;
+      --cp-success: #4ade80;
+      --cp-danger: #f87171;
+      --cp-warning: #fbbf24;
+      --cp-link: #4da6ff;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+      --cp-overlay: rgba(41, 41, 41, 0.88);
+      --cp-panel: rgba(41, 41, 41, 0.72);
+      --cp-panel-strong: rgba(41, 41, 41, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.04);
+      --cp-highlight: rgba(253, 142, 161, 0.12);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--cp-bg);
+      color: var(--cp-text);
+      font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.55;
+    }
+    a { color: var(--cp-link); }
+    button, input { font: inherit; }
+    .shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; }
+    .hero {
+      padding: 56px 0 32px;
+      border-bottom: 1px solid var(--cp-border);
+      background: var(--cp-bg-elevated);
+    }
+    .eyebrow {
+      color: var(--cp-accent);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    h1 { max-width: 850px; margin: 10px 0 14px; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 1.05; }
+    h2 { margin: 0 0 12px; font-size: 1.55rem; }
+    h3 { margin: 24px 0 8px; font-size: 1.05rem; }
+    p { margin: 8px 0 14px; }
+    .lede { max-width: 820px; color: var(--cp-text-soft); font-size: 1.12rem; }
+    .route {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 28px;
+    }
+    .route div {
+      min-height: 94px;
+      padding: 16px;
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      background: var(--cp-surface);
+    }
+    .route strong { display: block; color: var(--cp-accent); margin-bottom: 4px; }
+    .layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 28px; padding: 28px 0 64px; }
+    nav {
+      position: sticky;
+      top: 16px;
+      align-self: start;
+      padding: 16px;
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      background: var(--cp-surface);
+      box-shadow: 0 0 2px var(--cp-border), 0 1px 2px var(--cp-border);
+    }
+    nav a {
+      display: block;
+      padding: 8px 10px;
+      border-radius: 0.625rem;
+      color: var(--cp-text);
+      text-decoration: none;
+    }
+    nav a:hover { background: var(--cp-accent-soft); color: var(--cp-accent); }
+    .progress { height: 8px; margin: 8px 0 16px; overflow: hidden; border-radius: 0.625rem; background: var(--cp-surface-soft); }
+    .progress span { display: block; width: 0; height: 100%; background: var(--cp-success); transition: width 180ms ease; }
+    main { min-width: 0; }
+    .card {
+      margin-bottom: 20px;
+      padding: 24px;
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      background: var(--cp-surface);
+      box-shadow: 0 0 2px var(--cp-border), 0 1px 2px var(--cp-border);
+    }
+    .step-title { display: flex; gap: 12px; align-items: flex-start; }
+    .step-number {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      flex: 0 0 34px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--cp-accent);
+      color: var(--cp-accent-fg);
+      font-weight: 700;
+    }
+    .checkline {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin-top: 16px;
+      color: var(--cp-text-muted);
+    }
+    .checkline input { margin-top: 5px; accent-color: var(--cp-accent); }
+    .callout {
+      margin: 16px 0;
+      padding: 14px 16px;
+      border-left: 4px solid var(--cp-accent);
+      border-radius: 0.625rem;
+      background: var(--cp-accent-soft);
+    }
+    .callout.warning { border-left-color: var(--cp-warning); }
+    .callout.success { border-left-color: var(--cp-success); }
+    .code-wrap { position: relative; margin: 12px 0; }
+    pre {
+      margin: 0;
+      padding: 18px;
+      overflow: auto;
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      background: var(--cp-surface-soft);
+      color: var(--cp-text);
+      font-family: Consolas, "Courier New", Courier, monospace;
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+    code { font-family: Consolas, "Courier New", Courier, monospace; }
+    .copy {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      padding: 6px 10px;
+      border: 1px solid var(--cp-border-strong);
+      border-radius: 0.625rem;
+      background: var(--cp-surface);
+      color: var(--cp-text);
+      cursor: pointer;
+    }
+    .copy:hover { border-color: var(--cp-accent); color: var(--cp-accent); }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; }
+    th, td { padding: 11px; border: 1px solid var(--cp-border); text-align: left; vertical-align: top; }
+    th { background: var(--cp-surface-soft); }
+    .good { color: var(--cp-success); font-weight: 700; }
+    .bad { color: var(--cp-danger); font-weight: 700; }
+    .muted { color: var(--cp-text-muted); }
+    footer { padding: 24px 0 48px; color: var(--cp-text-muted); border-top: 1px solid var(--cp-border); }
+    @media (max-width: 820px) {
+      .route { grid-template-columns: 1fr 1fr; }
+      .layout { grid-template-columns: 1fr; }
+      nav { position: static; }
+    }
+    @media (max-width: 520px) {
+      .route { grid-template-columns: 1fr; }
+      .card { padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="shell">
+      <div class="eyebrow">Customer setup guide</div>
+      <h1>Run Mistral OCR through Microsoft Foundry AI Gateway</h1>
+      <p class="lede">Configure a custom API in the API Management instance behind AI Gateway, authenticate callers with an APIM subscription key, authenticate APIM to Foundry with managed identity, and verify every layer before running OCR.</p>
+      <div class="route" aria-label="Request flow">
+        <div><strong>1. Notebook</strong>Sends the document and APIM subscription key.</div>
+        <div><strong>2. Custom APIM API</strong>Matches the <code>/mistral-ocr</code> API suffix.</div>
+        <div><strong>3. Managed identity</strong>APIM obtains a Foundry backend token.</div>
+        <div><strong>4. Mistral OCR</strong>Receives <code>/providers/mistral/azure/ocr</code>.</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="shell layout">
+    <nav aria-label="Guide sections">
+      <strong>Setup progress</strong>
+      <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
+      <div id="progressText" class="muted">0 of 9 complete</div>
+      <a href="#understand">Choose the correct route</a>
+      <a href="#prerequisites">Prerequisites</a>
+      <a href="#gateway">Enable AI Gateway</a>
+      <a href="#identity">Configure identity</a>
+      <a href="#api">Create custom API</a>
+      <a href="#policy">Add APIM policy</a>
+      <a href="#subscription">Create subscription</a>
+      <a href="#environment">Configure .env</a>
+      <a href="#verify">Verify and diagnose</a>
+    </nav>
+
+    <main>
+      <section id="understand" class="card">
+        <div class="step-title"><span class="step-number">1</span><div><h2>Choose the correct gateway route</h2><p>The provider-specific Mistral OCR operation needs the custom APIM API.</p></div></div>
+        <table>
+          <thead><tr><th>Endpoint</th><th>Use</th><th>Result for this notebook</th></tr></thead>
+          <tbody>
+            <tr><td><code>https://&lt;gateway&gt;.azure-api.net/&lt;foundry-project&gt;</code></td><td>Foundry-generated standard model API</td><td class="bad">Do not use for this OCR route</td></tr>
+            <tr><td><code>https://&lt;gateway&gt;.azure-api.net/mistral-ocr</code></td><td>Custom passthrough API targeting the Foundry resource</td><td class="good">Use this value</td></tr>
+          </tbody>
+        </table>
+        <div class="callout warning"><strong>Why:</strong> the generated project API routed the provider-specific OCR path to an Azure ML-style backend and returned <code>404 NOT FOUND</code>. The custom API explicitly targets the resource endpoint that exposes Mistral OCR.</div>
+        <label class="checkline"><input type="checkbox" class="task">I will use the custom <code>/mistral-ocr</code> API base URL.</label>
+      </section>
+
+      <section id="prerequisites" class="card">
+        <div class="step-title"><span class="step-number">2</span><div><h2>Collect the required values</h2><p>Record these before editing APIM.</p></div></div>
+        <ul>
+          <li><strong>Foundry resource endpoint:</strong> <code>https://&lt;resource&gt;.services.ai.azure.com</code>, without the OCR path.</li>
+          <li><strong>OCR deployment name:</strong> the exact name under Foundry <strong>Models + endpoints</strong>.</li>
+          <li><strong>AI Gateway APIM instance:</strong> shown under Foundry <strong>Manage → AI Gateway</strong>.</li>
+          <li><strong>Permissions:</strong> enough access to edit APIM APIs/policies and assign RBAC on the Foundry resource.</li>
+        </ul>
+        <label class="checkline"><input type="checkbox" class="task">I have the Foundry resource endpoint, deployment name, and APIM instance.</label>
+      </section>
+
+      <section id="gateway" class="card">
+        <div class="step-title"><span class="step-number">3</span><div><h2>Enable Foundry AI Gateway</h2><p>Foundry AI Gateway uses Azure API Management behind the scenes.</p></div></div>
+        <ol>
+          <li>In the new Foundry portal, open the resource.</li>
+          <li>Go to <strong>Manage → AI Gateway → Add AI Gateway</strong>.</li>
+          <li>Create or select an eligible APIM instance.</li>
+          <li>Wait for status <strong>Enabled</strong>.</li>
+          <li>For an existing project, open the gateway and select <strong>Add project to gateway</strong>.</li>
+        </ol>
+        <div class="callout">Keep the generated Foundry API. The custom OCR API created below is an additional API in the same APIM instance.</div>
+        <label class="checkline"><input type="checkbox" class="task">The gateway and project both show Enabled.</label>
+      </section>
+
+      <section id="identity" class="card">
+        <div class="step-title"><span class="step-number">4</span><div><h2>Give APIM a backend identity</h2><p>Use managed identity instead of storing a Foundry credential in APIM.</p></div></div>
+        <ol>
+          <li>Open the APIM resource in Azure Portal.</li>
+          <li>Go to <strong>Security → Managed identities</strong> and enable the system-assigned identity.</li>
+          <li>Open the Foundry resource's <strong>Access control (IAM)</strong>.</li>
+          <li>Assign <strong>Cognitive Services User</strong> to the APIM managed identity.</li>
+          <li>Wait several minutes for RBAC propagation.</li>
+        </ol>
+        <label class="checkline"><input type="checkbox" class="task">APIM managed identity is enabled and has Foundry data-plane access.</label>
+      </section>
+
+      <section id="api" class="card">
+        <div class="step-title"><span class="step-number">5</span><div><h2>Create the custom Mistral OCR API</h2><p>Create this in the APIM instance associated with AI Gateway.</p></div></div>
+        <ol>
+          <li>Go to <strong>APIM → APIs → Add API → HTTP</strong>.</li>
+          <li>Set <strong>Display name</strong> to <code>Mistral Document OCR</code>.</li>
+          <li>Set <strong>Web service URL</strong> to the Foundry resource base endpoint.</li>
+          <li>Set <strong>API URL suffix</strong> to <code>mistral-ocr</code>.</li>
+          <li>Add a <code>POST</code> operation with URL template <code>/providers/mistral/azure/ocr</code>.</li>
+        </ol>
+        <table>
+          <tbody>
+            <tr><th>Client URL</th><td><code>https://&lt;gateway&gt;.azure-api.net/mistral-ocr/providers/mistral/azure/ocr</code></td></tr>
+            <tr><th>Backend URL</th><td><code>https://&lt;resource&gt;.services.ai.azure.com/providers/mistral/azure/ocr</code></td></tr>
+          </tbody>
+        </table>
+        <label class="checkline"><input type="checkbox" class="task">The custom API and POST operation exist with the exact paths above.</label>
+      </section>
+
+      <section id="policy" class="card">
+        <div class="step-title"><span class="step-number">6</span><div><h2>Add the API-level policy</h2><p>Apply it at <strong>Mistral Document OCR → All operations</strong>, not globally.</p></div></div>
+        <p>Open <strong>Design → Inbound processing → Policy code editor</strong> and use the following policy. Replace the backend placeholder.</p>
+        <div class="code-wrap">
+          <button class="copy" type="button">Copy</button>
+          <pre><code>&lt;policies&gt;
+  &lt;inbound&gt;
+    &lt;base /&gt;
+    &lt;set-backend-service
+      base-url="https://&lt;foundry-resource&gt;.services.ai.azure.com" /&gt;
+    &lt;authentication-managed-identity
+      resource="https://ai.azure.com"
+      ignore-error="false" /&gt;
+  &lt;/inbound&gt;
+  &lt;backend&gt;
+    &lt;base /&gt;
+  &lt;/backend&gt;
+  &lt;outbound&gt;
+    &lt;base /&gt;
+  &lt;/outbound&gt;
+  &lt;on-error&gt;
+    &lt;base /&gt;
+  &lt;/on-error&gt;
+&lt;/policies&gt;</code></pre>
+        </div>
+        <div class="callout warning">Inspect the POST operation's own policy too. Remove any operation-level <code>set-backend-service</code> that points to an Azure ML or project endpoint, because it can override the API-level backend.</div>
+        <label class="checkline"><input type="checkbox" class="task">The effective backend is the Foundry resource endpoint, with no Azure ML override.</label>
+      </section>
+
+      <section id="subscription" class="card">
+        <div class="step-title"><span class="step-number">7</span><div><h2>Create client access to the custom API</h2><p>Keep <strong>Subscription required</strong> enabled.</p></div></div>
+        <ol>
+          <li>Go to <strong>APIM → Subscriptions → Add subscription</strong>.</li>
+          <li>Choose <strong>API</strong> scope and select <strong>Mistral Document OCR</strong>.</li>
+          <li>Create it in <strong>Active</strong> state.</li>
+          <li>Copy either generated primary or secondary key.</li>
+          <li>Under the custom API's settings, confirm the subscription header name. New custom APIs normally use <code>Ocp-Apim-Subscription-Key</code>.</li>
+        </ol>
+        <div class="callout warning"><strong>Secret handling:</strong> store the key only in the local <code>.env</code>. Never paste it into a notebook, screenshot, email, or source control. Rotate either key immediately if exposed.</div>
+        <label class="checkline"><input type="checkbox" class="task">An active subscription is scoped to the custom API and its key is stored safely.</label>
+      </section>
+
+      <section id="environment" class="card">
+        <div class="step-title"><span class="step-number">8</span><div><h2>Configure the local environment</h2><p>Copy <code>.env.example</code> to <code>.env</code>, then fill in real values.</p></div></div>
+        <div class="code-wrap">
+          <button class="copy" type="button">Copy</button>
+          <pre><code>AZURE_FOUNDRY_ENDPOINT=https://&lt;resource&gt;.services.ai.azure.com
+AZURE_MISTRAL_OCR_DEPLOYMENT=mistral-ocr-4-0
+AZURE_MISTRAL_OCR_API_KEY=
+
+AZURE_AI_GATEWAY_ENDPOINT=https://&lt;gateway&gt;.azure-api.net/mistral-ocr
+AZURE_AI_GATEWAY_SUBSCRIPTION_KEY=&lt;custom-API subscription key&gt;
+AZURE_AI_GATEWAY_KEY_HEADER=Ocp-Apim-Subscription-Key
+AZURE_AI_GATEWAY_AUTH_MODE=gateway_managed_identity</code></pre>
+        </div>
+        <ul>
+          <li>Only one <code>AZURE_AI_GATEWAY_ENDPOINT</code> assignment should exist.</li>
+          <li>Do not append <code>/providers/mistral/azure/ocr</code>; the notebooks append it.</li>
+          <li>Restart the notebook kernel after changing <code>.env</code>.</li>
+        </ul>
+        <label class="checkline"><input type="checkbox" class="task">The local .env has one gateway endpoint and no secret is committed.</label>
+      </section>
+
+      <section id="verify" class="card">
+        <div class="step-title"><span class="step-number">9</span><div><h2>Verify before processing a document</h2><p>Run <code>mistral_ocr_ai_gateway_diagnostics.ipynb</code> from the beginning.</p></div></div>
+        <ol>
+          <li>Run <code>uv sync</code>, then <code>uv run jupyter lab</code>.</li>
+          <li>Restart the kernel and run all diagnostic cells in order.</li>
+          <li>The no-key probe should return a gateway <code>401</code>; this is expected.</li>
+          <li>The key probe with an empty body should return <code>400</code> or <code>422</code>; this proves routing and authentication reached payload validation.</li>
+          <li>Run the final real OCR request and expect <code>200</code>.</li>
+        </ol>
+        <table>
+          <thead><tr><th>Result</th><th>Likely fix</th></tr></thead>
+          <tbody>
+            <tr><td><code>401 missing subscription key</code></td><td>Use the header named in <code>WWW-Authenticate</code>; confirm key and subscription scope.</td></tr>
+            <tr><td>Backend <code>401</code></td><td>Check the managed-identity policy audience and effective policy scope.</td></tr>
+            <tr><td>Backend <code>403</code></td><td>Grant the APIM identity <strong>Cognitive Services User</strong> on Foundry.</td></tr>
+            <tr><td>Azure ML-style <code>404 NOT FOUND</code></td><td>Replace the backend with the <code>services.ai.azure.com</code> resource endpoint and remove policy overrides.</td></tr>
+            <tr><td><code>400</code>/<code>422</code> for <code>{}</code></td><td class="good">Success: the request reached OCR validation.</td></tr>
+            <tr><td>TCP timeout</td><td>Check APIM availability, DNS, public/private networking, VPN, firewall, and proxy.</td></tr>
+          </tbody>
+        </table>
+        <div class="callout success">When diagnostics reach payload validation, the gateway configuration is ready for the real document request.</div>
+        <label class="checkline"><input type="checkbox" class="task">Diagnostics reach OCR validation and the real request returns HTTP 200.</label>
+      </section>
+
+      <section class="card">
+        <h2>Microsoft references</h2>
+        <ul>
+          <li><a href="https://learn.microsoft.com/azure/foundry/configuration/enable-ai-api-management-gateway-portal">Configure AI Gateway in Microsoft Foundry</a></li>
+          <li><a href="https://learn.microsoft.com/azure/api-management/api-management-subscriptions">Subscriptions in Azure API Management</a></li>
+          <li><a href="https://learn.microsoft.com/azure/api-management/authentication-managed-identity-policy">APIM managed-identity authentication policy</a></li>
+          <li><a href="https://learn.microsoft.com/azure/api-management/set-backend-service-policy">APIM set-backend-service policy</a></li>
+        </ul>
+      </section>
+    </main>
+  </div>
+
+  <footer>
+    <div class="shell">Mistral OCR AI Gateway customer setup guide. Validate resource names, endpoints, role assignments, and security controls for your environment.</div>
+  </footer>
+
+  <script>
+    const tasks = [...document.querySelectorAll(".task")];
+    const progressBar = document.getElementById("progressBar");
+    const progressText = document.getElementById("progressText");
+    function updateProgress() {
+      const done = tasks.filter((task) => task.checked).length;
+      progressBar.style.width = `${(done / tasks.length) * 100}%`;
+      progressText.textContent = `${done} of ${tasks.length} complete`;
+    }
+    tasks.forEach((task) => task.addEventListener("change", updateProgress));
+    document.querySelectorAll(".copy").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const text = button.nextElementSibling.innerText;
+        await navigator.clipboard.writeText(text);
+        const previous = button.textContent;
+        button.textContent = "Copied";
+        setTimeout(() => { button.textContent = previous; }, 1200);
+      });
+    });
+    updateProgress();
+  </script>
+</body>
+</html>
